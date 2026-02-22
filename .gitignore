@@ -58,6 +58,7 @@ Thumbs.db
 # Project specific
 *.csv
 !sample*.csv
+*Zone.Identifier
 
 # Logs
 *.log
