@@ -4,17 +4,18 @@ version = "0.1.0"
 description = "FastAPI backend for AI Equity Research Agent"
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi==0.115.8",
-    "uvicorn==0.34.0",
-    "pandas==2.2.3",
-    "langgraph==0.2.53",
-    "pydantic==2.10.6",
-    "pydantic-settings==2.7.1",
-    "supabase==2.12.0",
-    "psycopg==3.2.5",
-    "pgvector==0.3.6",
-    "google-generativeai==0.8.4",
-    "python-multipart==0.0.9",
+    "fastapi==0.103.0",
+    "uvicorn[standard]==0.24.0",
+    "pandas==2.0.3",
+    "pydantic==2.4.0",
+    "pydantic-settings==2.0.3",
+    "requests==2.31.0",
+    "supabase==2.4.0",
+    "psycopg[binary]==3.1.14",
+    "pgvector==0.2.4",
+    "google-generativeai==0.3.0",
+    "python-multipart==0.0.6",
+    "langgraph==0.0.69",
 ]
 
 [build-system]
