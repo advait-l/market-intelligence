@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import date, timedelta
 
 import requests
@@ -6,6 +7,8 @@ import streamlit as st
 
 
 st.set_page_config(page_title="AI Equity Research Agent", layout="wide")
+
+default_backend = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.markdown(
     """
@@ -40,7 +43,7 @@ st.markdown(
 
 with st.sidebar:
     st.header("Configuration")
-    backend_url = st.text_input("Backend URL", value="http://localhost:8000")
+    backend_url = st.text_input("Backend URL", value=default_backend)
     st.markdown("Upload one CSV per ticker (e.g., `AAPL_EOD.csv`).")
     uploads = st.file_uploader("CSV files", type=["csv"], accept_multiple_files=True)
     if st.button("Ingest CSVs"):
@@ -84,7 +87,7 @@ if st.button("Analyze"):
             col_a, col_b, col_c = st.columns(3)
             col_a.metric("RSI", f"{result['indicators'].get('rsi', 0):.2f}")
             col_b.metric("MACD", f"{result['indicators'].get('macd', 0):.2f}")
-            col_c.metric("Signal", result['indicators'].get("signal", "neutral"))
+            col_c.metric("Signal", result["indicators"].get("signal", "neutral"))
             st.write(result["thesis"])
     else:
         st.error(f"Analysis failed: {response.text}")

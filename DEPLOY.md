@@ -62,7 +62,7 @@ If you prefer to deploy manually, create two separate Web Services on Render.
    - **Root Directory**: `frontend`
    - **Environment**: `Python`
    - **Build Command**: `pip install --no-cache-dir -r requirements.txt`
-   - **Start Command**: `streamlit run streamlit_app.py --server.port 10000 --server.address 0.0.0.0`
+   - **Start Command**: `streamlit run streamlit_app.py --server.port 10000 --server.address 0.0.0.0 --server.headless true --browser.gatherUsageStats false`
 4. Expand **Advanced** and add the following Environment Variables:
    - `PYTHON_VERSION`: `3.11.8`
    - `BACKEND_URL`: The URL of your backend service (e.g., `https://ai-equity-research-backend.onrender.com`)
