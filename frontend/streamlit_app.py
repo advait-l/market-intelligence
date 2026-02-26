@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import date, timedelta
+from datetime import date
 
 import requests
 import streamlit as st
@@ -8,7 +8,7 @@ import streamlit as st
 
 st.set_page_config(page_title="AI Equity Research Agent", layout="wide")
 
-default_backend = os.getenv("BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.markdown(
     """
@@ -35,51 +35,77 @@ st.markdown(
     """
     <div class="hero">
         <h1>AI Equity Research Agent</h1>
-        <p>Upload EOD CSVs, compute technical signals, and generate a thesis with Gemini.</p>
+        <p>Select stocks, compute technical signals, and generate a thesis with Gemini.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-with st.sidebar:
-    st.header("Configuration")
-    backend_url = st.text_input("Backend URL", value=default_backend)
-    st.markdown("Upload one CSV per ticker (e.g., `AAPL_EOD.csv`).")
-    uploads = st.file_uploader("CSV files", type=["csv"], accept_multiple_files=True)
-    if st.button("Ingest CSVs"):
-        if not uploads:
-            st.warning("Please upload at least one CSV.")
-        else:
-            files = [("files", (f.name, f.getvalue(), "text/csv")) for f in uploads]
-            response = requests.post(f"{backend_url}/ingest", files=files, timeout=120)
-            if response.ok:
-                st.success("Ingestion complete.")
-                st.json(response.json())
-            else:
-                st.error(f"Ingestion failed: {response.text}")
+
+@st.cache_data(ttl=60)
+def fetch_stocks() -> list[dict]:
+    """Fetch available stocks with their date ranges from the backend."""
+    try:
+        response = requests.get(f"{BACKEND_URL}/stocks", timeout=10)
+        response.raise_for_status()
+        return response.json().get("stocks", [])
+    except Exception:
+        return []
+
+
+stocks = fetch_stocks()
+
+if not stocks:
+    st.warning(
+        "No ingested stocks found. Please ingest stock data via the backend before running analysis."
+    )
+    st.stop()
+
+# Build lookup: ticker -> {min_date, max_date}
+stock_map: dict[str, dict] = {s["ticker"]: s for s in stocks}
+ticker_options = sorted(stock_map.keys())
 
 st.subheader("Run Analysis")
-col1, col2, col3 = st.columns([2, 1, 1])
-with col1:
-    tickers_input = st.text_input("Tickers", value="AAPL")
-with col2:
-    start_date = st.date_input("Start date", value=date.today() - timedelta(days=180))
-with col3:
-    end_date = st.date_input("End date", value=date.today())
 
-if st.button("Analyze"):
-    tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
+col1, col2, col3 = st.columns([2, 1, 1])
+
+with col1:
+    selected_tickers = st.multiselect(
+        "Stocks",
+        options=ticker_options,
+        placeholder="Select one or more tickers...",
+    )
+
+# Compute date range intersection for all selected tickers
+if selected_tickers:
+    min_date = max(date.fromisoformat(stock_map[t]["min_date"]) for t in selected_tickers)
+    max_date = min(date.fromisoformat(stock_map[t]["max_date"]) for t in selected_tickers)
+    # Clamp: if intersection is invalid (no overlap), fall back to union
+    if min_date > max_date:
+        min_date = min(date.fromisoformat(stock_map[t]["min_date"]) for t in selected_tickers)
+        max_date = max(date.fromisoformat(stock_map[t]["max_date"]) for t in selected_tickers)
+else:
+    min_date = date.today()
+    max_date = date.today()
+
+with col2:
+    start_date = st.date_input("Start date", value=min_date, key="start_date")
+with col3:
+    end_date = st.date_input("End date", value=max_date, key="end_date")
+
+if st.button("Analyze", disabled=not selected_tickers):
     payload = {
-        "tickers": tickers,
+        "tickers": selected_tickers,
         "start_date": start_date.isoformat(),
         "end_date": end_date.isoformat(),
     }
-    response = requests.post(
-        f"{backend_url}/analyze",
-        data=json.dumps(payload),
-        headers={"Content-Type": "application/json"},
-        timeout=180,
-    )
+    with st.spinner("Running analysis..."):
+        response = requests.post(
+            f"{BACKEND_URL}/analyze",
+            data=json.dumps(payload),
+            headers={"Content-Type": "application/json"},
+            timeout=180,
+        )
     if response.ok:
         data = response.json()
         for result in data.get("results", []):
