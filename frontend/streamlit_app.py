@@ -18,9 +18,9 @@ st.set_page_config(
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
-WAKE_TIMEOUT_SECS = 90
+PING_REQUEST_TIMEOUT = 20
 PING_INTERVAL_SECS = 3
-PING_ATTEMPT_LIMIT = WAKE_TIMEOUT_SECS // PING_INTERVAL_SECS
+PING_ATTEMPT_LIMIT = 10
 
 SIGNAL_COLORS = {
     "bullish": "#00c48c",
@@ -181,7 +181,7 @@ if not st.session_state.backend_ready:
                 <div style="font-size:3rem;">📈</div>
                 <p class="wake-title">Starting up the backend…</p>
                 <p class="wake-sub">
-                    Free-tier services sleep when idle. This usually takes 30–60 seconds.
+                    Free-tier services sleep when idle. This usually takes up to 60 seconds.
                 </p>
             </div>
             """,
@@ -193,7 +193,7 @@ if not st.session_state.backend_ready:
         )
 
     try:
-        resp = requests.get(f"{BACKEND_URL}/ping", timeout=PING_INTERVAL_SECS)
+        resp = requests.get(f"{BACKEND_URL}/ping", timeout=PING_REQUEST_TIMEOUT)
         resp.raise_for_status()
         st.session_state.backend_ready = True
         st.session_state.ping_attempts = 0

@@ -122,6 +122,8 @@ resume-project/
 │   ├── pyproject.toml
 │   └── requirements.txt
 ├── frontend/
+│   ├── .streamlit/
+│   │   └── config.toml       # Streamlit theme configuration (dark mode)
 │   ├── streamlit_app.py      # Main Streamlit application
 │   ├── pyproject.toml
 │   └── requirements.txt
@@ -295,8 +297,8 @@ Features:
 
 **Backend Wake-up Logic:**
 - Free-tier services sleep when idle
-- Frontend polls `/ping` every 3 seconds
-- Times out after 90 seconds (30 attempts)
+- Frontend polls `/ping` with a 20-second per-request timeout
+- Up to 10 attempts (3-second sleep between failed attempts)
 - Centered full-page wake screen with `st.progress` bar
 
 **Chart:**
@@ -307,10 +309,18 @@ Features:
 - Range selector buttons: 1M, 3M, 6M, 1Y, All
 - Y-axes on the right side (finance convention)
 
+**Theming:**
+- `frontend/.streamlit/config.toml` sets `base = "dark"` so Streamlit native widgets (inputs, buttons, toolbar) render in dark mode
+- Custom CSS injected via `st.markdown` overrides specific element colors to match the palette
+- Both layers must be kept in sync — the config.toml values match the CSS color constants
+
 **Color System:**
 - Bullish: `#00c48c` (green) with `rgba(0,196,140,0.12)` background
 - Bearish: `#ff4b4b` (red) with `rgba(255,75,75,0.12)` background
 - Neutral: `#a0a0b0` (gray) with `rgba(160,160,176,0.12)` background
+- App background: `#0e1117`
+- Secondary background (sidebar, cards): `#13161e`
+- Primary accent: `#3d5afe`
 
 ## Database Schema (infra/supabase.sql)
 
