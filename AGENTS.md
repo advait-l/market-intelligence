@@ -248,20 +248,33 @@ Features:
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Sidebar                                                            │
 │  ───────────────                                                    │
-│  Title & Description                                                │
-│  ───────────────                                                    │
-│  Stock List (radio buttons, first stock default)                   │
-│  Data range info                                                    │
+│  Branding: "AI Equity Research" title + subtitle                   │
+│  Search/filter input (filters stock list by ticker)                │
+│  Stock list as styled cards (ticker, date range, signal badge)     │
+│  Refresh data button                                                │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Main Page                                                          │
 │  ───────────────                                                    │
-│  Stock Title                                                        │
-│  Candlestick Chart (Plotly)                                         │
+│  Header: Ticker name + metadata pills (name, sector, exchange)     │
+│  Stat row: Latest Close | Trading Days | Analyses Run              │
 │  ───────────────                                                    │
-│  Tabs: [Analysis History] [Run New Analysis]                        │
+│  Two-pane Plotly chart (dark theme):                               │
+│    - Top 72%: Candlestick with range selector (1M/3M/6M/1Y/All)   │
+│    - Bottom 28%: Volume bar chart (green/red colored)              │
+│  ───────────────                                                    │
+│  Tabs: [Analysis History] [New Analysis]                           │
 │                                                                      │
-│  Analysis History: Card per analysis with metrics + thesis          │
-│  Run New Analysis: Period selector + analyze button                 │
+│  Analysis History:                                                  │
+│    - Card per analysis with left-border color (green/red/gray)     │
+│    - RSI, MACD, Signal indicator blocks                             │
+│    - Collapsible "View AI Thesis" expander                          │
+│  New Analysis:                                                      │
+│    - Period button group: 7D / 1M / 3M / 6M / 1Y / Custom         │
+│    - Custom date pickers shown only when Custom selected            │
+│    - Date range display pill                                        │
+│    - Run Analysis button                                            │
+│    - Live pipeline step progress (4 steps with icons)              │
+│    - Inline result card matching history style                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -272,21 +285,32 @@ Features:
 | `fetch_stocks()` | 60s | Get list of ingested stocks |
 | `fetch_analyses(ticker)` | 30s | Get analysis history |
 | `fetch_ohlc(ticker)` | 60s | Get OHLC data for charts |
+| `latest_signal(ticker)` | 30s | Get most recent signal for sidebar badge |
 
 **Session State:**
 - `backend_ready` - Whether backend responded to ping
 - `ping_attempts` - Wake-up retry count
 - `selected_stock` - Currently selected ticker
+- `selected_period` - Active period in New Analysis tab (default: "3M")
 
 **Backend Wake-up Logic:**
 - Free-tier services sleep when idle
 - Frontend polls `/ping` every 3 seconds
 - Times out after 90 seconds (30 attempts)
+- Centered full-page wake screen with `st.progress` bar
 
 **Chart:**
-- Uses Plotly `go.Candlestick`
-- Shows OHLC data for selected stock
-- X-axis: Date, Y-axis: Price
+- Uses Plotly `make_subplots` with 2 rows (shared x-axis)
+- Row 1 (72%): `go.Candlestick` — green up candles, red down candles
+- Row 2 (28%): `go.Bar` volume — colored green/red to match candle direction
+- Dark theme: `#0e1117` background, `#1f2330` grid lines
+- Range selector buttons: 1M, 3M, 6M, 1Y, All
+- Y-axes on the right side (finance convention)
+
+**Color System:**
+- Bullish: `#00c48c` (green) with `rgba(0,196,140,0.12)` background
+- Bearish: `#ff4b4b` (red) with `rgba(255,75,75,0.12)` background
+- Neutral: `#a0a0b0` (gray) with `rgba(160,160,176,0.12)` background
 
 ## Database Schema (infra/supabase.sql)
 
