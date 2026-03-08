@@ -37,12 +37,97 @@ SIGNAL_BG = {
 st.markdown(
     """
     <style>
-    [data-testid="stAppViewContainer"] { background: #0e1117; }
-    [data-testid="stSidebar"] {
-        background: #13161e;
-        border-right: 1px solid #1f2330;
-    }
-    [data-testid="stSidebar"] * { color: #e0e0f0 !important; }
+[data-testid="stAppViewContainer"] { background: #0e1117; }
+[data-testid="stSidebar"] {
+    background: #13161e;
+    border-right: 1px solid #1f2330;
+}
+[data-testid="stSidebar"] * { color: #e0e0f0 !important; }
+
+/* Override default Streamlit component styling */
+[data-testid="stTextInput"] {
+    background: #13161e !important;
+    border: 1px solid #1f2330 !important;
+    color: #e8eaf6 !important;
+}
+
+[data-testid="stTextInput"] input {
+    background: transparent !important;
+    color: #e8eaf6 !important;
+    caret-color: #e8eaf6 !important;
+}
+
+[data-testid="stButton"] {
+    background: transparent !important;
+}
+
+[data-testid="stButton"] button {
+    background: #3d5afe !important;
+    border: 1px solid #1f2330 !important;
+    color: #ffffff !important;
+    border-radius: 0.5rem !important;
+}
+
+[data-testid="stButton"] button:hover {
+    background: #5c6bc0 !important;
+    border-color: #3d5afe !important;
+}
+
+[data-testid="stButton"] button:focus {
+    background: #3d5afe !important;
+    border-color: #3d5afe !important;
+}
+
+[data-testid="stButton"] button:active {
+    background: #304ffe !important;
+}
+
+[data-testid="stButton"] button[kind="primary"] {
+    background: #00c48c !important;
+    border-color: #00c48c !important;
+}
+
+[data-testid="stButton"] button[kind="primary"]:hover {
+    background: #00a67a !important;
+    border-color: #00c48c !important;
+}
+
+[data-testid="stButton"] button[disabled] {
+    background: #2a2e45 !important;
+    opacity: 0.6 !important;
+}
+
+[data-testid="stTabs"] {
+    background: #13161e !important;
+    border-bottom: 1px solid #1f2330 !important;
+}
+
+[data-testid="stTabs"] button {
+    background: transparent !important;
+    color: #5c6180 !important;
+    border: none !important;
+}
+
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #e8eaf6 !important;
+    border-bottom: 2px solid #3d5afe !important;
+}
+
+[data-testid="stRangeSelector"] {
+    background: #13161e !important;
+    border: 1px solid #1f2330 !important;
+}
+
+[data-testid="stRangeSelector"] button {
+    background: transparent !important;
+    color: #5c6180 !important;
+    border: 1px solid #1f2330 !important;
+}
+
+[data-testid="stRangeSelector"] button[aria-pressed="true"] {
+    background: #3d5afe !important;
+    color: #ffffff !important;
+}
 
     .brand-block { padding: 1.2rem 0 0.6rem 0; }
     .brand-title {

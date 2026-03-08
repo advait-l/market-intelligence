@@ -252,7 +252,7 @@ Features:
 │  ───────────────                                                    │
 │  Branding: "AI Equity Research" title + subtitle                   │
 │  Search/filter input (filters stock list by ticker)                │
-│  Stock list as styled cards (ticker, date range, signal badge)     │
+│  Stock list as styled cards (ticker, date range, signal badges)     │
 │  Refresh data button                                                │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Main Page                                                          │
