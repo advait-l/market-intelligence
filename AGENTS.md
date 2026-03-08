@@ -124,7 +124,24 @@ resume-project/
 ├── frontend/
 │   ├── .streamlit/
 │   │   └── config.toml       # Streamlit theme configuration (dark mode)
-│   ├── streamlit_app.py      # Main Streamlit application
+│   ├── components/           # Modular UI components
+│   │   ├── __init__.py
+│   │   ├── navigation.py     # Top navigation bar
+│   │   ├── stock_list.py     # Sidebar stock list
+│   │   ├── stock_header.py   # Main area stock header
+│   │   ├── chart_panel.py    # Candlestick + volume chart
+│   │   ├── indicators_panel.py # RSI/MACD gauges (right side)
+│   │   ├── analysis_panel.py  # Analysis history + run new
+│   │   └── modals.py         # Loading states, errors, success displays
+│   ├── styles/               # Theme and CSS
+│   │   ├── __init__.py
+│   │   ├── theme.py          # Color constants, design tokens
+│   │   └── components.py     # Component-specific CSS
+│   ├── utils/                # Utilities
+│   │   ├── __init__.py
+│   │   ├── api.py            # Backend API calls
+│   │   └── helpers.py        # Data transformations
+│   ├── streamlit_app.py      # Main app (orchestrator only)
 │   ├── pyproject.toml
 │   └── requirements.txt
 ├── infra/
@@ -243,84 +260,165 @@ Features:
 
 ## Frontend Details
 
-### Streamlit App (frontend/streamlit_app.py)
+### Architecture Overview
 
-**Layout:**
+The frontend uses a **modular, component-based architecture** with clear separation of concerns:
+- **Orchestrator** (`streamlit_app.py`): Main entry point that coordinates components
+- **Components** (`components/`): Self-contained UI modules
+- **Styles** (`styles/`): Centralized theme and CSS management
+- **Utils** (`utils/`): API calls and data transformations
+
+### Layout Structure
+
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  Sidebar                                                            │
-│  ───────────────                                                    │
-│  Branding: "AI Equity Research" title + subtitle                   │
-│  Search/filter input (filters stock list by ticker)                │
-│  Stock list as styled cards (ticker, date range, signal badges)     │
-│  Refresh data button                                                │
-├─────────────────────────────────────────────────────────────────────┤
-│  Main Page                                                          │
-│  ───────────────                                                    │
-│  Header: Ticker name + metadata pills (name, sector, exchange)     │
-│  Stat row: Latest Close | Trading Days | Analyses Run              │
-│  ───────────────                                                    │
-│  Two-pane Plotly chart (dark theme):                               │
-│    - Top 72%: Candlestick with range selector (1M/3M/6M/1Y/All)   │
-│    - Bottom 28%: Volume bar chart (green/red colored)              │
-│  ───────────────                                                    │
-│  Tabs: [Analysis History] [New Analysis]                           │
-│                                                                      │
-│  Analysis History:                                                  │
-│    - Card per analysis with left-border color (green/red/gray)     │
-│    - RSI, MACD, Signal indicator blocks                             │
-│    - Collapsible "View AI Thesis" expander                          │
-│  New Analysis:                                                      │
-│    - Period button group: 7D / 1M / 3M / 6M / 1Y / Custom         │
-│    - Custom date pickers shown only when Custom selected            │
-│    - Date range display pill                                        │
-│    - Run Analysis button                                            │
-│    - Live pipeline step progress (4 steps with icons)              │
-│    - Inline result card matching history style                      │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  TOP NAVIGATION BAR (60px)                                      │
+│  [Logo] AI Equity Research    [Stock Selector]    [Actions]    │
+├───────────┬─────────────────────────────────────────────────────┤
+│           │  STOCK HEADER (80px)                                │
+│  SIDEBAR  │  Ticker Name | Price | Change | Sector | Exchange   │
+│  (240px)  ├─────────────────────────────────────────────────────┤
+│           │  MAIN CONTENT AREA                                  │
+│  [Search] │  ┌─────────────────────┬────────────────────────┐   │
+│  [List]   │  │                     │                        │   │
+│  AAPL     │  │   CHART PANEL       │   INDICATORS PANEL     │   │
+│  MSFT     │  │   (Candlestick +    │   (RSI Gauge)          │   │
+│  GOOGL    │  │    Volume)          │   (MACD Gauge)         │   │
+│  ...      │  │                     │   (Signal Badge)       │   │
+│           │  │                     │   [Run Analysis Btn]   │   │
+│           │  └─────────────────────┴────────────────────────┘   │
+│           │  ANALYSIS PANEL (Expandable)                        │
+│           │  ┌───────────────────────────────────────────────┐  │
+│           │  │ Analysis History (cards)                      │  │
+│           │  └───────────────────────────────────────────────┘  │
+└───────────┴─────────────────────────────────────────────────────┘
 ```
 
-**Key Functions:**
+### Component Modules
 
-| Function | Cache TTL | Purpose |
-|----------|-----------|---------|
-| `fetch_stocks()` | 60s | Get list of ingested stocks |
-| `fetch_analyses(ticker)` | 30s | Get analysis history |
-| `fetch_ohlc(ticker)` | 60s | Get OHLC data for charts |
-| `latest_signal(ticker)` | 30s | Get most recent signal for sidebar badge |
+**1. Navigation** (`components/navigation.py`)
+- Top navigation bar with logo, stock selector, and action buttons
+- Logo and branding on left
+- Stock selector dropdown in center (when multiple stocks available)
+- Action buttons on right
 
-**Session State:**
+**2. Stock List** (`components/stock_list.py`)
+- Sidebar with search/filter functionality
+- Compact list items (no cards) with:
+  - Ticker (bold)
+  - Date range (small, gray)
+  - Signal badge (right-aligned pill)
+- Active state: left border accent + background highlight
+- Refresh button at bottom
+
+**3. Stock Header** (`components/stock_header.py`)
+- Large ticker name (2.5rem, bold)
+- Company name (gray)
+- Metadata pills (sector, exchange)
+- Stat cards row:
+  - Latest Close
+  - Change (absolute)
+  - Change % (percentage)
+  - Trading Days
+  - Analyses Run
+
+**4. Chart Panel** (`components/chart_panel.py`)
+- Plotly candlestick + volume chart
+- Two-row layout (72% price, 28% volume)
+- Range selector buttons (1M, 3M, 6M, 1Y, All)
+- Dark theme with custom colors
+- Y-axes on right side
+
+**5. Indicators Panel** (`components/indicators_panel.py`)
+- RSI gauge with progress bar (0-100, color-coded zones)
+- MACD gauge with histogram visualization
+- Large signal badge (bullish/bearish/neutral)
+- Analysis period selector (7D, 1M, 3M, 6M, 1Y, Custom)
+- Date range display
+- "Run Analysis" button (primary action)
+
+**6. Analysis Panel** (`components/analysis_panel.py`)
+- Header with analysis count
+- Analysis cards with:
+  - Date range + timestamp
+  - RSI, MACD, Signal indicators (compact)
+  - Left border color matching signal
+  - Collapsible thesis expander
+
+**7. Modals** (`components/modals.py`)
+- Wake screen (backend startup)
+- Step progress indicator (pipeline steps)
+- Error state display
+- Success result display
+
+### Styling System
+
+**Theme** (`styles/theme.py`)
+- Design tokens: colors, spacing, typography, layout dimensions
+- Color system:
+  - Backgrounds: `#0e1117` (primary), `#13161e` (secondary), `#1a1e2e` (tertiary)
+  - Text: `#e8eaf6` (primary), `#9098b8` (secondary), `#5c6180` (muted)
+  - Accents: `#3d5afe` (primary blue)
+  - Signals: `#00c48c` (bullish), `#ff4b4b` (bearish), `#a0a0b0` (neutral)
+
+**Components CSS** (`styles/components.py`)
+- Global styles (app, sidebar, buttons, inputs)
+- Component-specific CSS classes
+- Applied via `st.markdown(apply_all_styles(), unsafe_allow_html=True)`
+
+### Utilities
+
+**API** (`utils/api.py`)
+- `fetch_stocks()` - Get all stocks (60s cache)
+- `fetch_analyses(ticker)` - Get analysis history (30s cache)
+- `fetch_ohlc(ticker, start, end)` - Get OHLC data (60s cache)
+- `ping_backend()` - Health check for wake-up
+- `run_analysis(ticker, start, end)` - Trigger analysis pipeline
+
+**Helpers** (`utils/helpers.py`)
+- `get_signal_color(signal)` - Map signal to color
+- `format_price(price)` - Format with $ and commas
+- `format_percentage(value)` - Format with +/-
+- `get_latest_signal(analyses)` - Extract most recent signal
+- `calculate_price_change(ohlc)` - Compute price change from data
+
+### Session State
+
 - `backend_ready` - Whether backend responded to ping
-- `ping_attempts` - Wake-up retry count
+- `ping_attempts` - Wake-up retry count (max: 10)
 - `selected_stock` - Currently selected ticker
-- `selected_period` - Active period in New Analysis tab (default: "3M")
+- `selected_period` - Active period (default: "3M")
+- `analyses_cache` - Dict of ticker → analyses list (prevents redundant fetches)
 
-**Backend Wake-up Logic:**
-- Free-tier services sleep when idle
-- Frontend polls `/ping` with a 20-second per-request timeout
-- Up to 10 attempts (3-second sleep between failed attempts)
-- Centered full-page wake screen with `st.progress` bar
+### Backend Wake-up Logic
 
-**Chart:**
+1. On app start, check `backend_ready` flag
+2. If not ready, show wake screen with progress bar
+3. Poll `/ping` endpoint with 20s timeout
+4. Retry up to 10 times with 3s sleep between attempts
+5. On success: set `backend_ready=True` and continue
+6. On failure after 10 attempts: show error message
+
+### Chart Details
+
 - Uses Plotly `make_subplots` with 2 rows (shared x-axis)
 - Row 1 (72%): `go.Candlestick` — green up candles, red down candles
 - Row 2 (28%): `go.Bar` volume — colored green/red to match candle direction
 - Dark theme: `#0e1117` background, `#1f2330` grid lines
 - Range selector buttons: 1M, 3M, 6M, 1Y, All
 - Y-axes on the right side (finance convention)
+- Hover labels with dark background
 
-**Theming:**
-- `frontend/.streamlit/config.toml` sets `base = "dark"` so Streamlit native widgets (inputs, buttons, toolbar) render in dark mode
-- Custom CSS injected via `st.markdown` overrides specific element colors to match the palette
-- Both layers must be kept in sync — the config.toml values match the CSS color constants
+### Future Extensibility
 
-**Color System:**
-- Bullish: `#00c48c` (green) with `rgba(0,196,140,0.12)` background
-- Bearish: `#ff4b4b` (red) with `rgba(255,75,75,0.12)` background
-- Neutral: `#a0a0b0` (gray) with `rgba(160,160,176,0.12)` background
-- App background: `#0e1117`
-- Secondary background (sidebar, cards): `#13161e`
-- Primary accent: `#3d5afe`
+The modular architecture enables easy additions:
+- **New panels**: Add component module, import in orchestrator
+- **Watchlists**: Add section to sidebar
+- **Comparison view**: New component with multiple stocks
+- **Alerts**: Add icon to top nav
+- **Export**: Add button to analysis panel
+- **Settings**: New modal/page
+- **News feed**: New panel component
 
 ## Database Schema (infra/supabase.sql)
 
